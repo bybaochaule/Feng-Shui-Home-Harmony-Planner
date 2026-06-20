@@ -1,0 +1,70 @@
+#!/usr/bin/env python3
+"""Validate the Feng-Shui Home Harmony Planner skill package."""
+
+from pathlib import Path
+import sys
+
+
+ROOT = Path(__file__).resolve().parents[1]
+
+REQUIRED_FILES = [
+    "README.md",
+    "SKILL.md",
+    "PACKAGE-SUMMARY.md",
+    "beispiele.md",
+    "references/intake-checklist.md",
+    "references/five-elements-quick-guide.md",
+    "references/room-guides.md",
+    "references/rental-friendly-solutions.md",
+    "references/safety-boundaries.md",
+    "references/output-templates.md",
+    "references/bagua-lite.md",
+    "assets/intake-form.md",
+]
+
+REQUIRED_SKILL_TERMS = [
+    "name: feng-shui-home-harmony-planner",
+    "description:",
+    "Verwenden, wenn",
+    "Nicht verwenden",
+    "Zuerst klaeren",
+    "Qualitaetskontrolle",
+]
+
+
+def fail(message: str) -> None:
+    print(f"FAIL: {message}")
+    sys.exit(1)
+
+
+def main() -> None:
+    missing = [rel for rel in REQUIRED_FILES if not (ROOT / rel).is_file()]
+    if missing:
+        fail("Missing required files: " + ", ".join(missing))
+
+    skill = (ROOT / "SKILL.md").read_text(encoding="utf-8")
+    if not skill.startswith("---\n"):
+        fail("SKILL.md does not start with YAML frontmatter")
+
+    parts = skill.split("---\n", 2)
+    if len(parts) < 3:
+        fail("SKILL.md frontmatter is not closed")
+
+    for term in REQUIRED_SKILL_TERMS:
+        if term not in skill:
+            fail(f"SKILL.md missing expected term: {term}")
+
+    summary = (ROOT / "PACKAGE-SUMMARY.md").read_text(encoding="utf-8")
+    for term in ["Marketplace-Beschreibung", "Preisempfehlung", "GitHub-Thumbnail", "QA-Checkliste"]:
+        if term not in summary:
+            fail(f"PACKAGE-SUMMARY.md missing expected section: {term}")
+
+    examples = (ROOT / "beispiele.md").read_text(encoding="utf-8")
+    if examples.count("## Beispiel") < 4:
+        fail("beispiele.md should include at least 4 examples")
+
+    print("OK: skill package validation passed")
+
+
+if __name__ == "__main__":
+    main()
